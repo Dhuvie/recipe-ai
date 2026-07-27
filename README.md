@@ -4,6 +4,9 @@
 
 The Fridge to Recipe Application is a full-stack web architecture designed to dynamically generate structured culinary recipes based on user-provided ingredients. It utilizes a React and Vite frontend coupled with a lightweight Express backend proxy. The backend securely interfaces with the Google Gemini AI API to stream generated content via Server-Sent Events (SSE). The frontend consumes this stream to render interactive components, including recipe cards, ingredient checklists, and nutritional macronutrient charts, in real-time.
 
+
+Video Link : https://drive.google.com/file/d/1W1oQLxR6j-eIo_yVMX6BuiDXOmuOw33l/view?usp=sharing
+
 ## System Requirements and Setup
 
 ### Prerequisites
