@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Recipe } from '../lib/recipeSchema';
+import { useState } from 'react';
+
+import type { Recipe } from '../lib/recipeSchema';
 import { ServingsAdjuster } from './ServingsAdjuster';
 import { IngredientList } from './IngredientList';
 import { StepList } from './StepList';

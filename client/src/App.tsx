@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useRecipe } from './hooks/useRecipe';
 import { IngredientInput } from './components/IngredientInput';
 import { EmptyState } from './components/EmptyState';

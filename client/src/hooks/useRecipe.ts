@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { fetchRecipe, ApiError } from '../api/recipeApi';
-import { Recipe } from '../lib/recipeSchema';
+import type { Recipe } from '../lib/recipeSchema';
 
 export type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 

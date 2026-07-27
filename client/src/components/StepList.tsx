@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Recipe } from '../lib/recipeSchema';
+import { useState } from 'react';
+
+import type { Recipe } from '../lib/recipeSchema';
 import { Check } from 'lucide-react';
 
 interface StepListProps {

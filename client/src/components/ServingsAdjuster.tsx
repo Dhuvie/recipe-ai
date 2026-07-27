@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Minus, Plus, Users } from 'lucide-react';
 
 interface ServingsAdjusterProps {
