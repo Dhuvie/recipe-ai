@@ -93,6 +93,7 @@ Output exactly one "card" block first, then "checklist" blocks for ingredients a
     res.end();
 
   } catch (error) {
+    console.error('Error generating AI response:', error);
     res.write(`event: error\ndata: {"code": "PROVIDER_ERROR"}\n\n`);
     res.end();
   }
