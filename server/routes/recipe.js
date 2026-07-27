@@ -59,7 +59,7 @@ Output exactly one "card" block first, then "checklist" blocks for ingredients a
 
     let buffer = '';
     
-    for await (const chunk of resultStream) {
+    for await (const chunk of resultStream.stream) {
       const text = chunk.text();
       buffer += text;
       
