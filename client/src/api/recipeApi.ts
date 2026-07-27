@@ -1,6 +1,3 @@
-import type { Recipe } from '../lib/recipeSchema';
-import { recipeSchema } from '../lib/recipeSchema';
-
 export class ApiError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -10,57 +7,58 @@ export class ApiError extends Error {
   }
 }
 
-export async function fetchRecipe(ingredients: string, signal: AbortSignal): Promise<Recipe> {
-  const fetchPromise = fetch('/api/recipe', {
+export async function streamRecipe(
+  prompt: string,
+  history: any[],
+  signal: AbortSignal,
+  onBlock: (block: any) => void
+): Promise<void> {
+  const response = await fetch('/api/recipe/stream', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ ingredients }),
+    body: JSON.stringify({ prompt, history }),
     signal
   });
 
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    const timer = setTimeout(() => {
-      reject(new ApiError('TIMEOUT_ERROR', 'Request timed out'));
-    }, 25000);
-    signal.addEventListener('abort', () => clearTimeout(timer));
-  });
-
-  let response;
-  try {
-    response = await Promise.race([fetchPromise, timeoutPromise]);
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      throw error;
-    }
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    throw new ApiError('NETWORK_ERROR', 'Network error');
-  }
-
   if (!response.ok) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch {
-      throw new ApiError('PROVIDER_ERROR', 'Provider error');
+    throw new ApiError('PROVIDER_ERROR', 'Provider error');
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new ApiError('NETWORK_ERROR', 'No stream available');
+  }
+
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    let lines = buffer.split('\n');
+    
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const dataStr = line.replace('data: ', '').trim();
+        if (dataStr === '{}') continue; 
+        try {
+          const block = JSON.parse(dataStr);
+          if (block.code === 'PROVIDER_ERROR') {
+            throw new ApiError('PROVIDER_ERROR', 'Provider error in stream');
+          }
+          onBlock(block);
+        } catch (e) {
+          // Ignore malformed JSON chunks that might happen during stream
+        }
+      } else if (line.startsWith('event: error')) {
+        throw new ApiError('PROVIDER_ERROR', 'Provider error');
+      }
     }
-    throw new ApiError(errorData.code || 'PROVIDER_ERROR', 'Provider error');
   }
-
-  let data;
-  try {
-    data = await response.json();
-  } catch {
-    throw new ApiError('PARSE_ERROR', 'Parse error');
-  }
-
-  const result = recipeSchema.safeParse(data);
-  if (!result.success) {
-    throw new ApiError('SCHEMA_ERROR', 'Schema error');
-  }
-
-  return result.data;
 }

@@ -1,67 +1,73 @@
-import { useState, useRef, useCallback } from 'react';
-import { fetchRecipe, ApiError } from '../api/recipeApi';
-import type { Recipe } from '../lib/recipeSchema';
-
-export type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
+import { useState, useRef } from 'react';
+import { streamRecipe, ApiError } from '../api/recipeApi';
+import type { ChatMessage } from './useSessions';
 
 export function useRecipe() {
-  const [status, setStatus] = useState<RequestStatus>('idle');
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const abortControllerRef = useRef<AbortController | null>(null);
-  const requestIdRef = useRef<number>(0);
-  const lastIngredientsRef = useRef<string>('');
 
-  const submitIngredients = useCallback(async (ingredients: string) => {
-    if (!ingredients.trim()) return;
-    
-    lastIngredientsRef.current = ingredients;
-    setStatus('loading');
-    setError(null);
-
+  const generate = async (prompt: string, currentHistory: ChatMessage[] = []) => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    abortControllerRef.current = new AbortController();
 
-    requestIdRef.current += 1;
-    const currentRequestId = requestIdRef.current;
-
+    setIsLoading(true);
+    setError(null);
+    
+    // When generating a refinement, we keep old blocks? Or we replace them? 
+    // The AI will regenerate the entire recipe blocks updated. So we clear blocks.
+    setBlocks([]);
+    
     try {
-      const data = await fetchRecipe(ingredients, controller.signal);
-      
-      if (currentRequestId === requestIdRef.current) {
-        setRecipe(data);
-        setStatus('success');
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        return;
-      }
-      if (currentRequestId === requestIdRef.current) {
-        setStatus('error');
-        if (err instanceof ApiError) {
-          setError(err.code);
-        } else {
-          setError('NETWORK_ERROR');
+      await streamRecipe(
+        prompt, 
+        currentHistory, 
+        abortControllerRef.current.signal,
+        (block) => {
+          setBlocks(prev => [...prev, block]);
         }
-      }
+      );
+      
+      // Generation successful. Add to history
+      setHistory([
+        ...currentHistory,
+        { role: 'user', text: prompt },
+        { role: 'model', text: 'Recipe updated successfully.' }
+      ]);
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+      setError(err instanceof ApiError ? err.code : 'UNKNOWN_ERROR');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
-  const retry = useCallback(() => {
-    if (lastIngredientsRef.current) {
-      submitIngredients(lastIngredientsRef.current);
+  const stop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
-  }, [submitIngredients]);
+  };
+
+  const loadSessionState = (loadedBlocks: any[], loadedHistory: ChatMessage[]) => {
+    setBlocks(loadedBlocks);
+    setHistory(loadedHistory);
+    setError(null);
+    setIsLoading(false);
+  };
 
   return {
-    status,
-    recipe,
+    blocks,
+    history,
+    isLoading,
     error,
-    submitIngredients,
-    retry
+    generate,
+    stop,
+    loadSessionState,
+    setBlocks,
   };
 }
