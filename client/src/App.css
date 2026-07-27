@@ -92,7 +92,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Empty State */
+
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -148,7 +148,7 @@ body {
   border-color: #d1d5db;
 }
 
-/* Error State */
+
 .error-state {
   text-align: center;
   padding: 3rem 2rem;
@@ -187,7 +187,7 @@ body {
   background-color: #dc2626;
 }
 
-/* Recipe Card */
+
 .recipe-card {
   background-color: #ffffff;
   border-radius: 1rem;
@@ -247,7 +247,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* Servings Adjuster */
+
 .servings-adjuster {
   display: flex;
   justify-content: space-between;
@@ -306,7 +306,7 @@ body {
   margin: 0;
 }
 
-/* Checklist */
+
 .checklist {
   list-style: none;
   display: flex;
@@ -387,7 +387,7 @@ body {
   line-height: 1.6;
 }
 
-/* Loading State */
+
 .loading-state {
   background-color: #ffffff;
   border-radius: 1rem;
